@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AWS Compressor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: sans-serif;
+            max-width: 480px;
+            margin: 40px auto;
+            padding: 0 16px;
+            font-size: 18px;
+            line-height: 1.5;
+        }
+
+        h2 {
+            margin-top: 40px;
+            font-size: 26px;
+        }
+
+        form {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        input[type="file"] {
+            display: block;
+            width: 100%;
+            margin-bottom: 16px;
+            font-size: 17px;
+        }
+
+        button {
+            padding: 12px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            min-height: 48px;
+        }
+
+        #status {
+            margin-top: 16px;
+            font-size: 17px;
+            color: #444;
+        }
+
+        /* Phones */
+        @media (max-width: 600px) {
+            body {
+                margin: 20px auto;
+                padding: 0 16px;
+                font-size: 18px;
+            }
+
+            h2 {
+                margin-top: 28px;
+                font-size: 24px;
+            }
+
+            form {
+                padding: 18px;
+            }
+
+            button {
+                width: 100%;
+                min-height: 52px;
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<h1>AWS Compressor</h1>
+
+<h2>Compress a file</h2>
+<form id="compressForm">
+    <input type="file" id="compressFile" required>
+    <button type="submit">Compress</button>
+</form>
+
+<h2>Decompress a file</h2>
+<form id="decompressForm">
+    <input type="file" id="decompressFile" required>
+    <button type="submit">Decompress</button>
+</form>
+
+<div id="status"></div>
+
+<script>
+    const API_BASE = window.location.origin.includes("localhost") || window.location.protocol === "file:"
+        ? "http://localhost:8080"
+        : window.location.origin;
+
+    const COMPRESS_URL = `${API_BASE}/compress/file`;
+    const DECOMPRESS_URL = `${API_BASE}/decompress/from-json`;
+
+    const statusEl = document.getElementById("status");
+
+    function setStatus(msg) {
+        statusEl.textContent = msg;
+    }
+
+    // Triggers a browser "save file" using whatever the server sent back,
+    // reading the filename from the Content-Disposition header if present.
+    async function handleUpload(url, file) {
+        setStatus("Uploading and processing...");
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await fetch(url, {
+            method: "POST",
+            body: formData
+        });
+
+        console.log("Response:", response);
+        console.log("Content-Type:", response.headers.get("Content-Type"));
+        console.log("Content-Disposition:", response.headers.get("Content-Disposition"));
+
+        if (!response.ok) {
+            setStatus("Error: " + response.status + " " + response.statusText);
+            return;
+        }
+
+        // Get filename supplied by backend
+        const disposition = response.headers.get("Content-Disposition");
+
+        let filename = "download";
+
+        if (disposition) {
+            const match = disposition.match(/filename="([^"]+)"/);
+
+            if (match) {
+                filename = match[1];
+            }
+        }
+
+        const blob = await response.blob();
+
+        const downloadUrl = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = downloadUrl;
+        a.download = filename;
+
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        URL.revokeObjectURL(downloadUrl);
+
+        setStatus("Done. Downloaded as " + filename);
+    }
+
+    document.getElementById("compressForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const file = document.getElementById("compressFile").files[0];
+        if (!file) return;
+        try {
+            await handleUpload(COMPRESS_URL, file);
+        } catch (err) {
+            setStatus("Error: " + err.message);
+        }
+    });
+
+    document.getElementById("decompressForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const file = document.getElementById("decompressFile").files[0];
+        if (!file) return;
+        try {
+            await handleUpload(DECOMPRESS_URL, file);
+        } catch (err) {
+            setStatus("Error: " + err.message);
+        }
+    });
+
+    function getFileName(file){
+
+    }
+</script>
+
+</body>
+</html>
