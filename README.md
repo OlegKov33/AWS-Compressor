@@ -2,7 +2,11 @@
 > [!IMPORTANT]
 > This guide was made with the intention that the project is production-ready and will not cover multiple Docker image uploads
 > In this README file, you will see how to configure a Maven Spring Boot project on AWS(Amazon Web Services) using Docker on Windows
-> If something doesn't work, check your pom.xml file and compare it to mine; check that you don't already have Docker images named the same as mine
+> If something doesn't work, check your pom.xml file and compare it to mine; check that you don't already have Docker images named the same as mine.
+
+> [!CAUTION]
+> This project works on every type of file: txt, rar, png. Just to name a few. However, only plain text such as .txt and .csv get compressed. Meanwhile, others grow in size.
+> This project has an index.html page, allowing anyone to use it and making it vulnerable to DoS attacks. I would advise adding [Spring Security](https://spring.io/projects/spring-security) or reducing the maximum file size [here](Compressor/src/main/resources/application.properties)
 
 ## Prerequisite
 1. Docker Desktop [download here](https://www.docker.com/products/docker-desktop/)
